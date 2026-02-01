@@ -5,7 +5,10 @@ import { devLog, devWarn, devDebug } from '../lib/devLog';
 import { getSessionToken, clearSessionToken } from '../../../services/sessionService';
 
 // Configure axios to send credentials (cookies) with cross-origin requests
-axios.defaults.withCredentials = true;
+// Disabled for HuggingFace builds which use Bearer token auth instead of cookies
+if (import.meta.env.VITE_IS_HF_BUILD !== 'true') {
+    axios.defaults.withCredentials = true;
+}
 
 // ============================================================================
 // SESSION TOKEN INTERCEPTORS (Single-Session Enforcement)
