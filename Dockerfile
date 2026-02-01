@@ -18,7 +18,7 @@ COPY . .
 
 # Set build-time environment variables
 # These can be overridden by HuggingFace Spaces secrets
-ARG VITE_API_BASE_URL=https://ainime-games.com/api
+ARG VITE_API_BASE_URL=https://ainime-games.com
 ARG VITE_IS_HF_BUILD=true
 ARG VITE_HF_AUTH_TOKEN
 
@@ -34,6 +34,9 @@ RUN mv dist/index.hf.html dist/index.html
 
 # Stage 2: Serve with nginx
 FROM nginx:alpine
+
+# Remove default nginx config to avoid conflicts
+RUN rm -f /etc/nginx/conf.d/default.conf
 
 # Copy built files from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
