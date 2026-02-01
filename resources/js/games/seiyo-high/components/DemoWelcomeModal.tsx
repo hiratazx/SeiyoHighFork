@@ -149,6 +149,24 @@ export const DemoWelcomeModal: React.FC<DemoWelcomeModalProps> = ({
             </p>
           </div>
 
+          {/* Session Warning */}
+          <div className="bg-amber-900/30 rounded-lg p-4 border border-amber-500/50">
+            <p className="text-amber-200 text-sm leading-relaxed">
+              <span className="font-bold">Important:</span> Your progress is <span className="font-bold">not saved</span> if 
+              you close or refresh this page. To keep your story, use the <span className="text-amber-100 font-medium">Export Save</span> button 
+              in the game menu, then import it on{' '}
+              <a
+                href="https://ainime-games.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cyan-400 hover:text-cyan-300 underline"
+              >
+                ainime-games.com
+              </a>
+              {' '}to continue playing.
+            </p>
+          </div>
+
           {/* Error Message */}
           {error && (
             <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-3">
