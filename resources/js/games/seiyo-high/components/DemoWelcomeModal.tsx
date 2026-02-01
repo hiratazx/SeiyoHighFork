@@ -88,6 +88,9 @@ export const DemoWelcomeModal: React.FC<DemoWelcomeModalProps> = ({
             <label htmlFor="demo-api-key" className="block text-gray-300 mb-2 font-medium">
               Enter your Gemini API key:
             </label>
+            <p className="text-yellow-400/80 text-xs mb-2">
+              Requires Tier 1 access (free trial or paid account). Free tier rate limits are too restrictive.
+            </p>
             <input
               id="demo-api-key"
               type="password"
@@ -100,14 +103,23 @@ export const DemoWelcomeModal: React.FC<DemoWelcomeModalProps> = ({
               autoComplete="off"
             />
             <p className="text-gray-400 text-sm mt-2">
-              Get one free at{' '}
+              Get one at{' '}
               <a
-                href="https://ai.google.dev"
+                href="https://aistudio.google.com/app/apikey"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-cyan-400 hover:text-cyan-300 underline"
               >
-                ai.google.dev
+                Google AI Studio
+              </a>
+              {' · '}
+              <a
+                href="https://ainime-games.com/guide"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-cyan-400 hover:text-cyan-300 underline"
+              >
+                Game Guide
               </a>
             </p>
           </div>
