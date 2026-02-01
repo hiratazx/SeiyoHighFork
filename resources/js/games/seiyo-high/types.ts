@@ -1,0 +1,899 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+*/
+/* tlint:disable */
+
+import { TranslationSet } from './lib/translations';
+
+// FIX: Re-export TranslationSet so other modules can import it from types.ts
+export type { TranslationSet };
+// Re-export CharacterConfig so other modules can import it from types.ts
+// export type { CharacterConfig };
+
+// Define CharacterConfig locally since it's no longer in storyConfig
+export interface CharacterConfig {
+  name: string;
+  role: string;
+  baseProfile: string;
+  appearance?: string;
+  color?: string;
+  spriteSets?: SpriteSet[];
+  type?: 'main' | 'side';
+  id?: string;
+  lastName?: string;
+  image?: string;
+  voiceId?: string;
+  /** Appearance prompt used to generate this character's sprite (if AI-generated) */
+  generatedSpritePrompt?: string;
+}
+
+// Location types (for segment navigation)
+export interface Location {
+  name: string;
+  url: string;
+}
+
+export interface LocationsBySegment {
+  [segment: string]: Location[];
+}
+
+// ========== GENERATIVE IMAGE TYPES ==========
+
+/** Payload for a generated background image from the backend */
+export interface GeneratedBackgroundPayload {
+  /** Canonical ID, e.g., "school_rooftop_evening" */
+  id: string;
+  /** Base64-encoded image data */
+  data: string;
+  /** MIME type, e.g., "image/png" */
+  mime: string;
+  /** Full visual description used as Imagen prompt */
+  prompt: string;
+  /** Concise one-sentence summary for location lists */
+  summary?: string;
+}
+
+/** Image generation mode */
+export type ImageStyleMode = 'hybrid' | 'override';
+
+/** Background image model options - includes both Imagen and Gemini native image models */
+export type ImagenModel = 
+  // Imagen models (variable style consistency)
+  | 'imagen-4.0-fast-generate-001'      // $0.02 - fastest, most variable
+  | 'imagen-4.0-generate-001'            // $0.04 - balanced
+  | 'imagen-4.0-ultra-generate-001'      // $0.06 - highest quality Imagen
+  // Gemini native image models (better style consistency)
+  | 'gemini-2.5-flash-image'             // $0.039 - good style consistency
+  | 'gemini-3-pro-image-preview';        // $0.134 - best style consistency
+
+/** Sprite generation model options (Gemini native image) */
+export type SpriteModel = 'gemini-2.5-flash-image' | 'gemini-3-pro-image-preview';
+
+/** Sprite generation mode */
+export type SpriteStyleMode = 'hybrid' | 'override';
+
+/** Summary of a generated location for AI context */
+export interface GeneratedLocationSummary {
+  /** Canonical ID: "{location}_{segment}" */
+  id: string;
+  /** Human-readable name */
+  name: string;
+  /** Time segment: Morning, Afternoon, Evening, Night */
+  segment: string;
+  /** Concise one-sentence summary (for compact location lists) */
+  summary: string;
+}
+
+/** Client context sent with API requests for image generation */
+export interface ClientContext {
+  /** Device aspect ratio for image generation */
+  aspectRatio: '16:9' | '9:16' | '1:1';
+  /** List of location IDs already stored in IndexedDB to avoid re-generating */
+  knownLocationIds: string[];
+  /** Full summaries of generated locations for AI context */
+  generatedLocationSummaries?: GeneratedLocationSummary[];
+}
+
+// Represents a single, player-driven narrative thread.
+export interface Subplot {
+  title: string;
+  summary: string;
+  status: 'ongoing' | 'concluded' | 'stalled';
+  involvedCharacters: string[];
+}
+
+export interface SpriteSet {
+  name: string;
+  description: string;
+  expressions: { [expression: string]: string };
+}
+
+// Represents a single line of dialogue in the conversation history
+export interface DialogueEntry {
+  id: string;
+  speaker: string;
+  dialogue: string; // This will now always be the canonical English text
+  dialogueTranslated?: string; // The optional, user-facing translated text
+  expression: string;
+  spriteSet: string;
+  motivation: string; // This will now ALWAYS be the canonical English text
+  motivationTranslated?: string; // The optional, user-facing translated text
+  day: number;
+  segment: DaySegment;
+  presentCharacters: string[];
+  location: string;
+  end_of_segment?: boolean;
+  // Affection changes triggered by this entry (attached to player entries)
+  affectionChanges?: AffectionChange[];
+}
+
+// Represents a single, clean entry for AI prompt history.
+export interface PromptHistoryEntry {
+  speaker: string;
+  dialogue: string; // Always the canonical English text
+  motivation?: string; // The canonical English subtext
+}
+
+// Represents the AI-ready version of a full day's history.
+export interface PromptDayLog {
+  day: number;
+  segments: {
+    segment: DaySegment;
+    dialogue: PromptHistoryEntry[];
+  }[];
+}
+
+// Represents a new, permanent piece of information for the story
+export interface StoryFact {
+  type: 'character' | 'story';
+  subject: string; // e.g., 'Ryuji' or 'Main Plot'
+  fact: string;
+}
+
+// Represents the four segments of a day
+export type DaySegment = string;
+
+/**
+ * Represents the calendar data for a single day, including weather forecast.
+ * Generated by CalendarService on the backend and persisted in frontend state.
+ */
+export interface DayCalendar {
+  day: number;
+  dayOfWeek: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+  season: 'Spring' | 'Summer' | 'Autumn' | 'Winter';
+  isWeekend: boolean;
+  weather: Record<string, string>; // Segment name → weather description
+  // Season pacing for Narrative Architect
+  dayInSeason: number;      // 1-14: which day of the current season
+  daysRemaining: number;    // 0-13: days left in this season
+  seasonEndsOnDay: number;  // absolute day number when season ends
+  // Year information
+  year: number;             // Actual calendar year (2000, 2001, 2002...)
+  yearOffset: number;       // 0-indexed game year: Year 0 = Days 1-56, Year 1 = Days 57-112, etc.
+  dayInYear: number;        // 1-56: which day within the current year
+  daysRemainingInYear: number; // Days left until year transition
+  // Graduation context
+  graduation: {
+    playerSchoolYear: string;
+    graduatingClass: string;
+    playerGraduatesToday: boolean;  // Note: backend uses "playerGraduatesToday" not "playerGraduates"
+    isGraduationDay: boolean;
+    daysUntilGraduation: number;
+    graduationNote: string;
+  };
+  // Era reminder for AI context
+  eraReminder: string;      // e.g., "🚨 YEAR 2000 - No smartphones, no social media..."
+}
+
+// Represents the log of a single segment's conversation
+export interface SegmentLog {
+  segment: DaySegment;
+  dialogue: DialogueEntry[];
+}
+
+// Represents the log of an entire day's conversations, broken down by segment
+export interface DayLog {
+  day: number;
+  segments: SegmentLog[];
+}
+
+// Represents a change in affection for a character, dictated by the AI
+export interface AffectionChange {
+  character: string;
+  change: number; // e.g., 1 or -1
+  reason: string; // A brief explanation for the change
+  reasonTranslated?: string;
+}
+
+export interface SceneMentalModel {
+  characterPositions: Array<{ // The physical layout of characters.
+    name: string;
+    position: string; // e.g., "Leaning against the railing", "Sitting on the sofa"
+  }>;
+  keyObjects: Array<{ // The state of important physical objects.
+    name: string;
+    state: string; // e.g., "On the table", "In Nana's pocket"
+  }>;
+}
+
+// Represents the structure of the AI's JSON response for a scene
+export interface VnScene {
+  scene: {
+    speaker: string;
+    dialogue: string;
+    dialogueTranslated?: string;
+    expression: string;
+    sprite_set: string;
+    motivation: string;
+    motivationTranslated?: string;
+  }[];
+  new_facts?: StoryFact[];
+  present_characters: string[];
+  location_hint?: string;
+  affection_changes?: AffectionChange[];
+  end_of_segment?: boolean;
+  player_choices?: string[];
+  player_choices_translated?: string[];
+  player_motivation?: string;
+  playerDialogueEnglish?: string;
+  question_asked_by?: string | null;
+  updated_scene_mental_model?: SceneMentalModel;
+  
+  // ========== GENERATIVE IMAGE FIELDS ==========
+  /** [GENERATIVE IMAGES] True if the DM is changing locations mid-scene */
+  location_change?: boolean;
+  /** [GENERATIVE IMAGES] Visual description for generating the new location background */
+  visual_description?: string;
+  /** [GENERATIVE IMAGES] Concise one-sentence summary for location lists */
+  visual_summary?: string;
+  /** [GENERATIVE IMAGES] Generated background payload from backend (if image was generated) */
+  generated_background?: GeneratedBackgroundPayload;
+  
+  // ========== AI REASONING CHAIN (PLAN-FIRST ARCHITECTURE) ==========
+  /** STEP 1: AI's scene planning - what will happen, who speaks, tone */
+  scene_plan?: string;
+  /** STEP 2: Loop pre-check - verifies no NPC is about to repeat a dead beat */
+  loop_pre_check?: string;
+  /** STEP 3: AI's rough draft of the scene (must respect loop_pre_check verdicts) */
+  first_draft?: string;
+
+  // ========== RULE COMPLIANCE REPORT (STEP 3) ==========
+  /** AI's mandatory verifiable compliance report - checks the first_draft for violations */
+  rule_compliance_report?: {
+    /** Verify no archetype titles used for characters */
+    character_reference_verification: string;
+    /** Verify no trait titles in dialogue or motivation */
+    trait_title_verification: string;
+    /** Verify NPCs only react to present moment */
+    past_scene_references_verification: string;
+    /** Verify no cross-character knowledge bleed */
+    cross_character_knowledge_verification: string;
+    /** Verify natural speech, no forbidden words or robo-speak */
+    natural_speech_verification: string;
+    /** Verify ghost character names used exactly as player specified */
+    ghost_character_name_verification: string;
+    /** Audit of every character in mental model - known cast vs ghost, with name verification */
+    mental_model_character_audit: string;
+    /** Verify the scene feels like a living world with protagonist at center, not sycophants */
+    living_world_check: string;
+    /** Verify narrator did not write "You [action]" for actions player did not explicitly take */
+    player_action_puppetry_check: string;
+    /** Verify player corrections/denials are respected - never contradict what player said */
+    player_correction_check?: string;
+    /** Dialogue craft audit - brevity, vocabulary, voice distinctness, no purple prose */
+    dialogue_quality_check?: string;
+    /** Intimacy commitment check - only when Sensual Intimacy Protocol is active */
+    intimacy_commitment_check?: string;
+    /** Verify affection changes are only for the player's most recent input */
+    affection_recency_check?: string;
+    /** NPC couple romance radar - existing couples showing dynamics, emergent chemistry spotted */
+    npc_couple_romance_check?: string;
+  };
+  
+  // ========== AI THOUGHT SUMMARY (DEBUGGING) ==========
+  /** Gemini's thought summary - shows AI reasoning for debugging prompt issues */
+  thought_summary?: string;
+}
+
+// Represents one segment of the daily itinerary plan
+export interface ItinerarySegment {
+  segment: DaySegment;
+  /**
+   * A multi-paragraph prose scenario for this segment.
+   * This is the "script" for the Dungeon Master, describing the setup,
+   * character motivations, and the core dilemmas or choices the player should face.
+   */
+  scenarioProse: string;
+  /** The specific name of the location where this segment should primarily take place. */
+  location_hint: string;
+  /** A list of character names who are central to this segment's events. */
+  character_focus: string[];
+  /** A mandatory check array. Must contain an object for each character from 'character_focus'. */
+  character_role_check: Array<{ name: string; role: string; }>;
+  /**
+   * [GENERATIVE IMAGES] The Narrative Architect's visual concept for this segment.
+   * Describes the location's physical appearance, mood, weather, and key visual details.
+   * This is passed to the Art Director/TransitionDirector for image generation.
+   */
+  visual_concept?: string;
+  /**
+   * [GENERATIVE IMAGES] A concise one-sentence summary of the location (max 15 words).
+   * Used for compact location lists and passed to TransitionDirector.
+   */
+  visual_summary?: string;
+}
+
+// Represents the AI's creative output for a revised itinerary, without the immutable segment name.
+export type RevisedItinerarySegmentData = Omit<ItinerarySegment, 'segment'>;
+
+// Pre-generation compliance report structure from Transition Director
+export interface TDPreGenerationCompliance {
+  story_coherence_scan?: {
+    player_plans_detected?: string;
+    player_plans_conflict?: string;
+    emergent_arrangements_detected?: string;
+    emergent_arrangements_conflict?: string;
+    coherence_decision?: string;
+    rewrite_substance_plan?: string;
+  };
+  physical_constraint_check?: string;
+  ghost_character_resolution?: string;
+  character_reference_plan?: string;
+  trait_title_reminder?: string;
+  natural_speech_reminder?: string;
+  knowledge_boundaries?: string;
+  living_world_reminder?: string;
+}
+
+// Represents the output from the Transition Director AI call
+export interface TransitionDirectorResponse {
+  /**
+   * The revised plan for the upcoming segment, as prose.
+   * Only included if the AI's logic (e.g., Player Veto)
+   * required a change to the original plan.
+   */
+  revised_itinerary_segment: RevisedItinerarySegmentData;
+  opening_scene: VnScene;
+  scene_mental_model: SceneMentalModel;
+  /** A mandatory check array. Must contain an object for each character from 'opening_scene.present_characters'. */
+  opening_scene_role_check: Array<{ name: string; role: string; }>;
+  
+  // ========== PRE-GENERATION COMPLIANCE ==========
+  /** Pre-generation compliance report from Transition Director */
+  pre_generation_compliance?: TDPreGenerationCompliance;
+  
+  // ========== GENERATIVE IMAGE FIELDS ==========
+  /** [GENERATIVE IMAGES] Refined visual description for the segment's location */
+  visual_description?: string;
+  /** [GENERATIVE IMAGES] Concise one-sentence summary for location lists */
+  visual_summary?: string;
+  /** [GENERATIVE IMAGES] Generated background payload from backend (if image was generated) */
+  generated_background?: GeneratedBackgroundPayload;
+  
+  // ========== AI THOUGHT SUMMARY (DEBUGGING) ==========
+  /** Gemini's thought summary - shows AI reasoning for debugging prompt issues */
+  thought_summary?: string;
+}
+
+export type PlayerAnalysisResponse = {
+  new_psychoanalysis_prose: string;
+  updated_player_backstory: string;
+  // Added for direct translation by Psychoanalyst (when playing in non-English)
+  new_psychoanalysis_prose_translated?: string;
+};
+
+// Represents the full plan for a day from the Narrative Architect AI
+export interface DailyItinerary {
+  day_theme: string;
+  segments: ItinerarySegment[];
+}
+
+// ADDED: The new StoryArcBeat type
+export type StoryArcBeat = {
+  beat: number;
+  description: string;
+  status: 'pending' | 'completed';
+  requiredAffection: number;
+  beat_id?: string;
+};
+
+/**
+ * Represents a major, evolving narrative arc for a character or group.
+ * This is a living document updated daily by the Narrative Architect.
+ */
+// MODIFIED: EvolvingStoryArc is now a type, includes 'stalled' and the new beats array.
+export type EvolvingStoryArc = {
+  /** A unique and persistent ID for the arc to track it across days. */
+  id: string;
+
+  /**
+   * [NEW] The explicit owner of this arc (Character Name).
+   * EXCEPTION: For the 'global_adventure_arc', this MUST be set to 'System'.
+   */
+  ownerId: string;
+
+  /** The title of the story arc. Can be updated if the arc evolves. */
+  title: string;
+
+  /**
+   * A dynamic summary of the arc's current state, including recent
+   * developments and the character's current goals within this arc.
+   * This field is rewritten by the Narrative Architect as the story progresses.
+   */
+  summary: string;
+
+  /** An array of character names primarily involved in this arc. */
+  involvedCharacters: string[];
+
+  /**
+   * The current status of the arc.
+   * 'ongoing': The central conflict is active.
+   * 'concluded': The central conflict has been resolved.
+   * 'dormant': The arc is paused but may become relevant again later.
+   * 'stalled': The player is avoiding or has rejected this arc.
+   */
+  status: 'ongoing' | 'concluded' | 'dormant' | 'stalled';
+
+  /** The day the arc was first generated or significantly updated. */
+  startDay: number;
+
+  /** The day the arc was concluded, if applicable. */
+  endDay?: number;
+
+  /** An array of narrative beats that make up this story arc. */
+  storyArcBeats?: StoryArcBeat[];
+};
+
+// Represents a character's core likes and dislikes.
+export interface CharacterLikesDislikes {
+  [characterName: string]: {
+    likes: string[];
+    dislikes: string[];
+  };
+}
+
+// [UPDATE] New definitions for the Narrative Trait System
+export type TraitStatus = 'developing' | 'established' | 'fading' | 'permanent';
+export type TraitCategory =
+  | 'trauma_response'
+  | 'coping_mechanism'
+  | 'physical_reality'
+  | 'sexual_nature'
+  | 'social_mask'
+  | 'source_of_joy'
+  | 'love_language';
+
+export interface CharacterTrait {
+  id: string; // e.g., 'performance-for-love'
+  name: string; // e.g., "The Performance of Utility"
+  category: TraitCategory;
+  /** * The Narrative Manifestation. 
+   * NOT a mechanical rule. 
+   * DESCRIBES how this part of their soul influences their reality.
+   */
+  description: string; 
+  origin: string; // e.g., "Born from her mother's abandonment." or "Unlocked by Keitaro on Day 14."
+  status: TraitStatus;
+}
+
+export interface CharacterTraits {
+  [characterName: string]: CharacterTrait[];
+}
+
+export interface CharacterDeveloperAnalysis {
+  updated_evolving_personas: { [key: string]: string };
+  updated_traits: CharacterTraits;
+  updated_likes_dislikes: CharacterLikesDislikes;
+}
+
+// Output for the new combined initial story generation AI
+// MODIFIED: Changed to a type for consistency
+export type InitialStoryFoundation = {
+  story_arcs: EvolvingStoryArc[];
+};
+
+// Represents the full 14-day plan for the story.
+export interface FullItinerary extends Array<DailyItinerary> {}
+
+export interface InteractionData {
+  elementText?: string;
+  id?: string;
+  type?: string;
+  value?: string;
+  appContext?: string;
+}
+
+// Provider/model identifiers
+export type ProviderId = 'gemini' | 'openrouter';
+export type GeminiModel = 'gemini-2.5-pro' | 'gemini-2.5-flash' | 'gemini-flash-latest' | 'gemini-3-pro-preview' | 'gemini-3-flash-preview';
+export type OpenRouterModel = 'minimax/minimax-m2' | 'openrouter/auto';
+export type AiModelId = GeminiModel | OpenRouterModel;
+
+export interface UnifiedMessage {
+  role: 'user' | 'model' | 'system';
+  content: string;
+}
+
+export interface AiProviderAdapter {
+  id: string;
+  generateContent<T>(
+    apiKey: string,
+    modelId: string,
+    messages: UnifiedMessage[],
+    config?: any,
+    options?: GenerationConfigOptions
+  ): Promise<ApiCallResult<T>>;
+}
+
+export type AiPersona = 
+  | 'NarrativeArchitect'
+  | 'ArcManager'
+  | 'CharacterDeveloper'
+  | 'TransitionDirector'
+  | 'RelationshipAnalyst'
+  | 'Psychoanalyst'
+  | 'Novelist'
+  | 'CastAnalyst'
+  | 'CanonArchivist'
+  | 'DungeonMaster'
+  | 'Translator';
+
+export interface ModelSelection {
+  /** Model for Dungeon Master (in-game dialogue) */
+  dungeonMasterModel: AiModelId;
+  
+  /** Model for Story Engine (EOD pipeline: NarrativeArchitect, ArcManager, etc.) */
+  storyModel: AiModelId;
+  
+  // DEPRECATED: Kept for migration/fallback from single-model era
+  selectedModel?: AiModelId;
+  
+  // Legacy fields - kept for backwards compatibility with saved data
+  dungeonMaster?: AiModelId;
+  narrativeArchitect?: AiModelId;
+  arcManager?: AiModelId;
+  characterDeveloper?: AiModelId;
+  useOptimizedSettings?: boolean;
+  
+  // ========== GENERATIVE IMAGE SETTINGS ==========
+  /** Master toggle for AI-generated backgrounds */
+  enableGenerativeImages?: boolean;
+  /** 'hybrid' = fill gaps for missing assets, 'override' = generate all locations dynamically */
+  imageStyleMode?: ImageStyleMode;
+  /** Which Imagen model to use for background generation */
+  imagenModel?: ImagenModel;
+  
+  // ========== GENERATIVE SPRITE SETTINGS ==========
+  /** Master toggle for AI-generated character sprites */
+  enableSpriteGeneration?: boolean;
+  /** Which Gemini native image model to use for sprite generation */
+  spriteModel?: SpriteModel;
+  /** 'hybrid' = AI chooses stock or generate, 'override' = always generate */
+  spriteStyleMode?: SpriteStyleMode;
+}
+
+export interface ApiCallResult<T> {
+  data: T;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+// Represents the new, concise psychological profiles generated at the end of each day.
+export type PsychologicalProfiles = {
+  [characterName: string]: string;
+  player: string;
+};
+
+export interface EndOfDayTranslationBundle {
+  novelChapter: string;
+  playerProse: string;
+  profiles: PsychologicalProfiles;
+  // NOTE: itinerary removed - never shown to players
+  // NOTE: relationshipDynamics removed - internal system data, not shown to players
+}
+
+// Interface for persona-specific generation settings.
+export interface GenerationConfigOptions {
+  temperature?: number;
+  topP?: number;
+}
+
+// ADDED: The new type for the Arc Manager's full response.
+export type ArcManagerAnalysis = {
+  updated_evolving_personas: PsychologicalProfiles;
+  updated_story_arcs: EvolvingStoryArc[];
+  updated_likes_dislikes: CharacterLikesDislikes;
+  subplot_analysis: Subplot[];
+};
+
+// REMOVED: The old ArcManagerResponse type is now obsolete.
+// export interface ArcManagerResponse { ... }
+
+// Represents the full response from the Narrative Architect for the next day's plan.
+export interface NextDayResponse {
+  itinerary: DailyItinerary;
+  updated_scheduled_events: ScheduledEvent[];
+}
+
+export interface NarrativeArchitectNextDayPayload {
+  story: { name: string };
+  currentDay: number;
+  playerName: string;
+
+  hybridMemoryNovelContext: string; // [STANDARDIZED] Was preProcessedNovelContext
+  preProcessedTranscript: string;
+
+  psychologicalProfiles: PsychologicalProfiles | null;
+  relationshipDynamics: string | null;
+  relationshipDynamicsStructured?: RelationshipDynamicsStructured | null;
+  factSheet: { [day: number]: string[] };
+  scheduledEvents: ScheduledEvent[]; // [STANDARDIZED] Was schedule
+  storyArcs: EvolvingStoryArc[];
+  subplots: Subplot[] | null;
+  evolvingPersonas: { [key: string]: string } | null;
+  characterTraits: CharacterTraits | null; // [NEW]
+  characterLikesDislikes: CharacterLikesDislikes | null;
+  characterChronicles: { [characterName: string]: any[] } | null;
+  characterBiographies?: { [characterName: string]: string } | null;
+  unaskedQuestions: { [characterName: string]: string | undefined } | null;
+  affection: { [key: string]: number };
+
+  playerPsychoanalysisProse: string | null;
+  playerBackstory: string | null;
+
+  mainCharacters: Array<{ name: string }>;
+  sideCharacters: Array<{ name: string }>;
+
+  modelConfig: ModelSelection;
+  apiKeys: { [provider: string]: string };
+
+  // EOD pipeline caching parameters
+  cachedContentName?: string | null;
+  pipelineState?: Record<string, any>;
+}
+
+export enum EndOfDayStep {
+  NOT_STARTED,
+  ARCHIVE_SEGMENT_COMPLETE, // Local operation before API calls start
+  RELATIONSHIP_ANALYSIS_START,  // Run RelationshipAnalyst FIRST so its updates go to all other personas
+  RELATIONSHIP_ANALYSIS_COMPLETE,
+  CASTING_ANALYSIS_START,
+  CASTING_ANALYSIS_COMPLETE,
+  PLAYER_ANALYSIS_START,
+  PLAYER_ANALYSIS_COMPLETE,
+  NOVEL_CHAPTER_START,
+  NOVEL_CHAPTER_COMPLETE,
+  ARCHIVIST_START,            // Canon Archivist call
+  ARCHIVIST_COMPLETE,
+  TRANSLATION_START,          // MOVED
+  TRANSLATION_COMPLETE,       // MOVED
+  ARC_MANAGER_START,          // NEW: Arc Manager call
+  ARC_MANAGER_COMPLETE,       // NEW
+  CHARACTER_DEVELOPER_START,  // NEW: Character Developer call
+  CHARACTER_DEVELOPER_COMPLETE, // NEW
+  PLANNER_START,              // Narrative Architect (Planner) call
+  PLANNER_COMPLETE,
+  SCENE_GENERATION_START,
+  SCENE_GENERATION_COMPLETE,
+  FINAL_STATE_SAVE_START,     // Local operation
+  FINAL_STATE_SAVE_COMPLETE,  // Final completion marker
+}
+
+export enum SegmentTransitionStep {
+  NOT_STARTED,
+  ANALYSIS_START,
+  ANALYSIS_COMPLETE,
+  SCENE_GENERATION_START,
+  SCENE_GENERATION_COMPLETE,
+  STATE_UPDATE_START,
+  STATE_UPDATE_COMPLETE,
+}
+
+// New enum for the new game generation pipeline
+export enum NewGameStep {
+  NOT_STARTED,
+  RESET_STATE_COMPLETE, // Initial local setup
+  UI_TRANSLATION_START,
+  UI_TRANSLATION_COMPLETE, // Includes check if needed
+  FOUNDATION_GENERATION_START,   // New Start Step
+  FOUNDATION_GENERATION_COMPLETE, // New Complete Step
+  
+  // [NEW] Relationship Dynamics Genesis Step
+  RELATIONSHIP_DYNAMICS_GENERATION_START,
+  RELATIONSHIP_DYNAMICS_GENERATION_COMPLETE,
+  
+  // [NEW] The Traits Generation Step
+  FOUNDATION_TRAITS_GENERATION_START,
+  FOUNDATION_TRAITS_GENERATION_COMPLETE,
+  
+  DAY_ONE_ITINERARY_START,
+  DAY_ONE_ITINERARY_COMPLETE,
+  ITINERARY_TRANSLATION_START,
+  ITINERARY_TRANSLATION_COMPLETE, // Includes check if needed
+  FIRST_SCENE_START,
+  FIRST_SCENE_COMPLETE,
+  FINAL_STATE_SAVE_START, // Local operation
+  FINAL_STATE_SAVE_COMPLETE, // Final completion marker
+}
+
+export interface NovelChapter {
+  proseChapter: string;
+  brutalSummary: string[]; // A list of key event strings
+  playthroughSummary?: string; // Optional 14-day volume summary
+  // Added for direct translation by Novelist (when playing in non-English)
+  proseChapterTranslated?: string;
+}
+
+export interface ScheduledEvent {
+  day: number;
+  description: string;
+  isComplete: boolean;
+}
+
+export interface CanonArchivistResponse {
+  facts: string[];
+  scheduledEvents?: Array<{ day: number; description: string }>;
+  compression_applied?: boolean;
+  compressed_range?: string;
+  updated_character_biographies?: { [characterName: string]: string };
+  updated_character_chronicles?: { [characterName: string]: ChronicleEntry[] };
+}
+
+export type MemoryCategory = 'Core Memory' | 'Intimacy Milestone' | 'Conflict' | 'Social Observation' | 'Fact';
+
+export interface ChronicleEntry {
+  day: number;
+  segment: DaySegment;
+  summary: string;
+  category: MemoryCategory;
+  participants: string[];
+}
+
+export interface RelationshipParagraph {
+  paragraph_id: string;
+  paragraph: string;
+  paragraph_translated?: string | null;
+}
+
+export type RelationshipDynamicsStructured = {
+  [relationshipKey: string]: RelationshipParagraph[];
+};
+
+export interface NewChronicleEntry {
+  character: string;
+  summary: string;
+  category: MemoryCategory;
+  participants: string[];
+}
+
+// Represents the main state of the application that gets saved to local storage.
+export interface AppState {
+  mainCharacters: CharacterConfig[];
+  sideCharacters: CharacterConfig[];
+  history: DialogueEntry[];
+  fullHistory: DayLog[];
+  sceneQueue: DialogueEntry[];
+  currentLine: DialogueEntry | null;
+  backgroundUrl: string;
+  playerName: string;
+  affection: {[key: string]: number};
+  currentDay: number;
+  currentSegment: DaySegment;
+  currentItinerarySegment?: ItinerarySegment | null;
+  promptsToday: number;
+  affectionGainedToday: {[key: string]: number};
+  affectionLostToday: {[key: string]: number};
+  evolvingPersonas: {[key: string]: string} | null;
+  characterTraits: CharacterTraits | null;
+  characterLikesDislikes: CharacterLikesDislikes | null;
+  playerChoices: string[] | null;
+  language: string;
+  uiTranslations: TranslationSet;
+  presentCharacterNames: string[];
+  characterStageSlots: (string | null)[];
+  characterExpressions: {[key: string]: { set: string; expression: string }};
+  fullItinerary: FullItinerary | null;
+  relationshipDynamics: string | null;
+  relationshipDynamicsStructured?: RelationshipDynamicsStructured | null;
+  relationshipDynamicsStructuredTranslated?: RelationshipDynamicsStructured | null;
+  storyArcs: EvolvingStoryArc[] | null;
+  subplots: Subplot[] | null;
+  showMotivations: boolean;
+  modelSelection: ModelSelection;
+  subplotAnalysis: Subplot[] | null;
+  factSheet: { [day: number]: string[] };
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalRequests: number;
+  // Canonical English States
+  psychologicalProfiles: PsychologicalProfiles | null;
+  novelChapters: NovelChapter[];
+  playthroughSummaries: string[];
+  playerPsychoanalysisProse: string | null;
+  playthroughCounter: number;
+  scheduledEvents: ScheduledEvent[];
+  sceneMentalModel: SceneMentalModel | null;
+  originalMainCharacters: string[];
+  originalSideCharacters: string[];
+
+  availableGenericSetNames: string[];
+
+  // NEW PROPERTY FOR CHARACTER CHRONICLE
+  characterChronicles: { [characterName: string]: ChronicleEntry[] };
+  characterBiographies: { [characterName: string]: string }; // NEW: Long-term narrative archives
+
+  // New property for idempotent pipeline
+  endOfDayStep: EndOfDayStep;
+  // New properties for new game pipeline
+  newGameStep: NewGameStep;
+
+  // New properties for key management
+  apiKeys: { [provider: string]: string };
+  
+  // Properties for persisting transition state
+  isAwaitingSegmentTransition: boolean;
+  segmentTransitionStep: SegmentTransitionStep;
+  isSegmentAnalysisComplete: boolean;
+
+  // --- Add UI State Flags ---
+  isAwaitingNextSceneClick: boolean;
+  isPipelineCompleteAndReady: boolean;
+  isLoading: boolean;
+  isAnalyzing: boolean;
+  isDayTransitioning: boolean;
+  isSegmentTransitioning: boolean;
+  isGameCompleted: boolean;
+  isDirectorLoading: boolean;
+  isAnalystLoading: boolean;
+  isUnrecoverableError: boolean;
+  isPipelineResumePending: boolean;
+  // --- End UI State Flags ---
+
+  // NEW PERSISTENT FIELDS FOR LOCALIZATION
+  novelChaptersTranslated?: string[];
+  playerPsychoanalysisProseTranslated?: string | null;
+  psychologicalProfilesTranslated?: PsychologicalProfiles | null;
+  fullItineraryTranslated?: FullItinerary | null;
+  playerChoicesTranslated?: string[] | null;
+  relationshipDynamicsTranslated?: string | null;
+
+  // NEW PROPERTY FOR THE AFFECTION LOG
+  affectionLog: { [day: number]: AffectionChange[] };
+  affectionLogTranslated?: { [day: number]: AffectionChange[] };
+
+  // NEW PROPERTIES FOR CURIOSITY PROTOCOL
+  playerBackstory: string | null;
+  unaskedQuestions: { [characterName: string]: string | undefined } | null;
+
+  // NEW: A cache for the pre-generated opening scene to ensure it's in the save file.
+  openingSceneCache: VnScene | null;
+
+  // ========== GENERATIVE IMAGE STATE ==========
+  /** [GENERATIVE IMAGES] Current location ID (maps to generatedLocations in IndexedDB) */
+  currentLocationId?: string;
+  /** [GENERATIVE IMAGES] The prompt used to generate the current background (for visual grounding) */
+  currentLocationDescription?: string;
+
+  // ADD THIS FIELD
+  locationsBySegment: {
+    [segment: string]: {
+        name: string;
+        url: string;
+    }[];
+  };
+
+  // NEW: Cached World Config (for logic that needs structure)
+  worldConfig?: {
+      day_structure: string[];
+      locationsBySegment: any;
+  };
+
+  // Calendar and weather data for the current day
+  dayCalendar: DayCalendar | null;
+
+  // DEPRECATED
+  subplotAnalysisSummary?: string | null;
+  fleshedOutCharacterProfiles?: {[key: string]: string} | null; // For migration
+  newGameCache?: any; // For migration
+}
