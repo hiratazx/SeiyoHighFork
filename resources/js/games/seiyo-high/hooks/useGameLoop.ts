@@ -2512,11 +2512,24 @@ export const useGameLoop = () => {
           const migratedState = (isHydratedSave(parsedJson) ? importedAppState : migrateSaveFile(importedAppState)) as AppState;
 
           // --- SECURITY FIX: PRESERVE CURRENT SESSION'S API KEYS ---
-          // Never overwrite the user's API keys with keys from an imported save file.
-          // The imported file should have empty keys (from our export fix), but even if 
-          // it contains keys (from an old export or external source), we ignore them.
-          // API keys are managed separately via localStorage (useAppSettings).
-          migratedState.apiKeys = apiKeys;
+          // Never import API keys from save files. Always use current session's keys.
+          // Read directly from localStorage to handle async React state updates
+          // (e.g., HF demo flow where handleSaveApiKeys is called right before import).
+          try {
+            const storedSettings = localStorage.getItem('vn_app_settings_v1');
+            if (storedSettings) {
+              const parsed = JSON.parse(storedSettings);
+              if (parsed.apiKeys) {
+                migratedState.apiKeys = parsed.apiKeys;
+              } else {
+                migratedState.apiKeys = {};
+              }
+            } else {
+              migratedState.apiKeys = {};
+            }
+          } catch {
+            migratedState.apiKeys = {};
+          }
           // ----------------------------------------------------------
 
           // --- SPRITE SYNC FIX: MERGE FRESH ASSETS FROM CONFIG ---

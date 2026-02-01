@@ -401,20 +401,17 @@ const App: React.FC<AppProps> = ({ isDeveloper, isSubscribed }) => {
   // [HF DEMO] Handle starting the demo with imported save
   const handleStartDemo = useCallback(async (playerName: string, apiKey: string) => {
     try {
-      // 1. Save API key to localStorage
-      localStorage.setItem('gemini_api_key', apiKey);
-      
-      // 2. Update the in-memory API keys state
+      // 1. Update the in-memory API keys state first
       handleSaveApiKeys({ gemini: apiKey });
       
-      // 3. Fetch the demo save file
+      // 2. Fetch the demo save file
       const response = await fetch('/demo/seiyo-high_demo_save.json');
       if (!response.ok) {
         throw new Error('Failed to load demo save file');
       }
       const saveData = await response.json();
       
-      // 4. Inject player name into the save data
+      // 3. Inject player name into the save data
       // The save file has a hydrated format with gameState and pipelineState
       
       // Update the main gameState playerName (used during gameplay)
@@ -432,7 +429,8 @@ const App: React.FC<AppProps> = ({ isDeveloper, isSubscribed }) => {
         });
       }
       
-      // 5. Create a fake file input event to trigger import
+      // 4. Create a fake file input event to trigger import
+      // Note: API key was saved to localStorage in step 1, import will read it from there
       const blob = new Blob([JSON.stringify(saveData)], { type: 'application/json' });
       const file = new File([blob], 'demo-save.json', { type: 'application/json' });
       const dataTransfer = new DataTransfer();
@@ -442,10 +440,10 @@ const App: React.FC<AppProps> = ({ isDeveloper, isSubscribed }) => {
         target: { files: dataTransfer.files }
       } as unknown as React.ChangeEvent<HTMLInputElement>;
       
-      // 6. Import the save
+      // 5. Import the save
       handleImportState(fakeEvent);
       
-      // 7. Close the modal
+      // 6. Close the modal
       setShowDemoWelcomeModal(false);
     } catch (error: any) {
       console.error('[HF Demo] Failed to start demo:', error);
