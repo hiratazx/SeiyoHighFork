@@ -377,6 +377,7 @@ const App: React.FC<AppProps> = ({ isDeveloper, isSubscribed }) => {
 
   // [HF DEMO] Frontend enforcement of Day 3 limit
   // This is a backup - backend middleware should also enforce this
+  // The main enforcement happens via API error when EOD pipeline is blocked at Day 3
   useEffect(() => {
     if (isHfDemo && currentDay > 3 && gameState === 'playing' && !showDemoLimitModal) {
       setDemoLimitDay(3);
