@@ -8,6 +8,16 @@ app_port: 7860
 pinned: false
 license: other
 short_description: AI-powered visual novel with unscripted storytelling
+tags:
+  - game
+  - gaming
+  - visual-novel
+  - interactive-fiction
+  - storytelling
+  - text-generation
+  - gemini
+  - anime
+  - roleplay
 ---
 
 # 🎌 Seiyo High — Unscripted AI Visual Novel
