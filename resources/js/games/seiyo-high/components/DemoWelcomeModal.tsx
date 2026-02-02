@@ -51,8 +51,8 @@ export const DemoWelcomeModal: React.FC<DemoWelcomeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-      <div className="vn-modal-panel max-w-lg w-full">
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="vn-modal-panel max-w-lg w-full max-h-[90vh] overflow-y-auto my-auto">
         {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-3xl font-bold text-cyan-300 text-shadow-medium mb-2">
