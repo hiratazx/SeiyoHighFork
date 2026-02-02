@@ -35,6 +35,7 @@ import {
 import { assembleHybridMemoryWithRecentPast, mapFullHistoryForAI, assembleVolumeAwareNovelContext } from '../../lib/promptUtils';
 import { getKnownLocationIds, getGeneratedLocationSummaries } from '../../db';
 import { devLog, devWarn } from '../../lib/devLog';
+import { getRobustApiKeys } from '../../lib/apiKeyUtils';
 
 /**
  * PRE-PROCESSES the state and sends a minimal payload to the backend proxy
@@ -125,7 +126,7 @@ async function getTransitionPayload(
         dayCalendar: state.dayCalendar || null, // [NEW] Weather/calendar system
         
         modelConfig: state.modelSelection,
-        apiKeys: state.apiKeys,
+        apiKeys: getRobustApiKeys(state.apiKeys),
     };
 
     // Add EOD pipeline caching parameters if provided

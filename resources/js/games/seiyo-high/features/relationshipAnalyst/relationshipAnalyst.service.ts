@@ -7,6 +7,7 @@
 import { postToRelationshipAnalyst } from '../../services/apiService';
 import { STORY_NAME } from '../../storyConfig';
 import { devLog } from '../../lib/devLog';
+import { getRobustApiKeys } from '../../lib/apiKeyUtils';
 import * as persistenceService from '../../services/persistenceService';
 import {
   AppState,
@@ -217,7 +218,7 @@ export async function getRelationshipAnalysis(
     factSheet: state.factSheet || {},
     affection: state.affection || {},
     modelConfig: state.modelSelection,
-    apiKeys: state.apiKeys,
+    apiKeys: getRobustApiKeys(state.apiKeys),
   };
 
   // Add EOD pipeline caching parameters if provided

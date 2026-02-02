@@ -297,20 +297,29 @@ const getCurrentModelConfig = (deps: { modelConfig?: ModelSelection; getModelCon
 };
 
 /**
- * Get the CURRENT API keys from localStorage.
+ * Get the CURRENT API keys with robust fallback.
+ * Checks getter → localStorage → deps snapshot, prioritizing whichever has a valid Gemini key.
  */
 const getCurrentApiKeys = (deps: { apiKeys?: Record<string, string>; getApiKeys?: () => Record<string, string> }): Record<string, string> => {
-    // First try the getter function if available
+    const hasValidGeminiKey = (keys: Record<string, string> | undefined): boolean => {
+        return !!(keys?.gemini && keys.gemini.length > 10);
+    };
+
+    // First try the getter function if available AND has valid key
     if (deps.getApiKeys) {
-        return deps.getApiKeys();
+        const getterKeys = deps.getApiKeys();
+        if (hasValidGeminiKey(getterKeys)) {
+            return getterKeys;
+        }
     }
     
-    // Read directly from localStorage for the most current value
+    // Try localStorage as fallback
     try {
         const raw = localStorage.getItem(APP_SETTINGS_KEY);
         if (raw) {
             const parsed = JSON.parse(raw);
-            if (parsed?.apiKeys) {
+            if (hasValidGeminiKey(parsed?.apiKeys)) {
+                devWarn('[gameFlowService] API key missing from state but found in localStorage - using localStorage');
                 return parsed.apiKeys;
             }
         }
@@ -318,8 +327,14 @@ const getCurrentApiKeys = (deps: { apiKeys?: Record<string, string>; getApiKeys?
         devWarn('[gameFlowService] Failed to read apiKeys from localStorage:', e);
     }
     
-    // Fallback to deps snapshot
-    return deps.apiKeys!;
+    // Try deps snapshot
+    if (hasValidGeminiKey(deps.apiKeys)) {
+        return deps.apiKeys!;
+    }
+
+    // Return whatever we have (may be empty - backend will return proper error)
+    devWarn('[gameFlowService] No valid API key found in getter, localStorage, or deps');
+    return deps.getApiKeys?.() || deps.apiKeys || {};
 };
 
 const structuredDynamicsToProse = (structured: any): string | null => {
@@ -709,7 +724,7 @@ async function executeCastingAnalysisStep(deps: GameFlowDeps, setters: Setters, 
     if (setters.startCountdown) setters.startCountdown(stepKey, 240, 'timeout');
 
     try {
-        if (!deps.apiKeys?.gemini) {
+        if (!getCurrentApiKeys(deps)?.gemini) {
             throw new Error("Missing Gemini API key. Please set your API key before generating relationship dynamics.");
         }
         const finalFullHistory = await persistenceService.loadPipelineData<DayLog[]>(EOD_KEY_FINAL_HISTORY);
@@ -784,7 +799,7 @@ async function executeCastingAnalysisStep(deps: GameFlowDeps, setters: Setters, 
                 persistedNovelChapters,
                 deps.currentDay,
                 deps.modelConfig,
-                deps.apiKeys,
+                getCurrentApiKeys(deps),
                 // [FIX] Pass character context data
                 persistedEvolvingPersonas,
                 persistedCharacterTraits,
@@ -1150,7 +1165,7 @@ async function executeRelationshipAnalysisStep(deps: GameFlowDeps, setters: Sett
                 sideCharacters: sideCharactersAfterUpdate,
                 playerName: deps.playerName,
                 modelSelection: deps.modelConfig,
-                apiKeys: deps.apiKeys,
+                apiKeys: getCurrentApiKeys(deps),
                 playthroughSummaries,
                 storyName: STORY_NAME,
                 subplots: subplotsForApi,
@@ -1346,7 +1361,7 @@ async function executePlayerAnalysisStep(deps: GameFlowDeps, setters: Setters, c
             (cm, ak) => {
                 const providerId = cm.startsWith('gemini') ? 'gemini' : 'openrouter';
                 return psychoanalystService.generatePlayerProseAnalysis(
-                    { ...deps.apiKeys, [providerId]: ak },
+                    { ...getCurrentApiKeys(deps), [providerId]: ak },
                     cm,
                     deps.playerName,
                     deps.playerPsychoanalysisProse || 'No analysis yet.',
@@ -1503,7 +1518,7 @@ async function executeNovelChapterStep(deps: GameFlowDeps, setters: Setters, cur
             (cm, ak) => {
                 const providerId = cm.startsWith('gemini') ? 'gemini' : 'openrouter';
                 return novelistService.generateNovelChapter(
-                    { ...deps.apiKeys, [providerId]: ak },
+                    { ...getCurrentApiKeys(deps), [providerId]: ak },
                     cm,
                     hybridNovelContext,
                     [dayLogForToday as any],
@@ -1723,7 +1738,7 @@ async function executeArchivistStep(deps: GameFlowDeps, setters: Setters, curren
         };
 
         const result = await canonArchivistService.generateFactSheet(
-            deps.apiKeys,
+            getCurrentApiKeys(deps),
             deps.modelConfig,
             cleanedTranscript,
             deps.factSheet,
@@ -2169,7 +2184,7 @@ async function executePlannerStep(deps: GameFlowDeps, setters: Setters, currentS
             mainCharacters: mainCharactersAfterUpdate.map(({ image, ...rest }) => rest),
             sideCharacters: sideCharactersAfterUpdate.map(({ image, ...rest }) => rest),
             modelConfig: deps.modelConfig,
-            apiKeys: deps.apiKeys,
+            apiKeys: getCurrentApiKeys(deps),
             // EOD pipeline caching parameters
             cachedContentName: pipelineStateBucket.cacheName || null, // cachedContentName from EOD cache
             pipelineState: pipelineStateBucket,
@@ -2429,7 +2444,7 @@ async function executeSceneGenerationStep(deps: GameFlowDeps, setters: Setters, 
                 deps.currentDay,
                 planForNextScene,
                 getCurrentModelConfig(deps),
-                deps.apiKeys,
+                getCurrentApiKeys(deps),
                 // [CACHE REBUILD] Additional fields for cache rebuilding
                 storyArcsForTD,
                 subplotsForTD,
@@ -2758,9 +2773,9 @@ export async function handleDayEnd(deps: GameFlowDeps, setters: Setters, overrid
         // === DM CACHE CLEANUP ===
         // Delete the DM cache to stop billing - it's no longer needed during EOD
         const dmCacheName = await persistenceService.loadPipelineData<string>(persistenceService.DM_CACHE_NAME_KEY);
-        if (dmCacheName && deps.apiKeys?.gemini) {
+        if (dmCacheName && getCurrentApiKeys(deps)?.gemini) {
             devLog("[EOD Pipeline] Deleting DM cache:", dmCacheName);
-            const deleteResult = await apiService.deleteCache(dmCacheName, deps.apiKeys);
+            const deleteResult = await apiService.deleteCache(dmCacheName, getCurrentApiKeys(deps));
             if (deleteResult.deleted) {
                 devLog("[EOD Pipeline] DM cache deleted successfully");
             } else {
@@ -2984,9 +2999,9 @@ export async function handleDayEnd(deps: GameFlowDeps, setters: Setters, overrid
         // === EOD CACHE CLEANUP ===
         // Delete the EOD cache to stop billing and clean up
         const finalBucket = await loadPipelineStateBucket();
-        if (finalBucket?.cacheName && deps.apiKeys?.gemini) {
+        if (finalBucket?.cacheName && getCurrentApiKeys(deps)?.gemini) {
             devLog("[EOD Pipeline] Deleting EOD cache:", finalBucket.cacheName);
-            const deleteResult = await apiService.deleteCache(finalBucket.cacheName, deps.apiKeys);
+            const deleteResult = await apiService.deleteCache(finalBucket.cacheName, getCurrentApiKeys(deps));
             if (deleteResult.deleted) {
                 devLog("[EOD Pipeline] EOD cache deleted successfully");
             } else {
@@ -3067,7 +3082,7 @@ export const startNewPlaythrough = async (deps: GameFlowDeps, setters: Setters &
             mainCharacters: freshMainCharacters,
             sideCharacters: freshSideCharacters,
             modelConfig: deps.modelConfig,
-            apiKeys: deps.apiKeys,
+            apiKeys: getCurrentApiKeys(deps),
         };
         const initialFoundation = await apiService.postToNarrativeArchitectFoundation(foundationPayload);
         // [FIX] Normalize arcs to ensure ownerId is properly mapped from API response
@@ -3088,7 +3103,7 @@ export const startNewPlaythrough = async (deps: GameFlowDeps, setters: Setters &
             mainCharacters: freshMainCharacters,
             sideCharacters: freshSideCharacters,
             modelConfig: deps.modelConfig,
-            apiKeys: deps.apiKeys,
+            apiKeys: getCurrentApiKeys(deps),
             relationshipDynamics: genesisDynamicsProse,
         };
         const dayOneItinerary = await apiService.postToNarrativeArchitectDayOne(dayOnePayload);
@@ -3133,7 +3148,7 @@ export const startNewPlaythrough = async (deps: GameFlowDeps, setters: Setters &
                 deps.currentDay,
                 morningSegmentPlan,
                 getCurrentModelConfig(deps),
-                deps.apiKeys,
+                getCurrentApiKeys(deps),
                 // No cache rebuild fields needed - new playthrough doesn't use EOD cache
                 [], [], [], null,
                 dayCalendarForDay14, // [NEW] Weather/calendar for TD (from NA response)
@@ -3254,7 +3269,7 @@ async function executeFoundationGenerationStep(deps: GameFlowDeps, setters: Sett
             sideCharacters: freshSideCharacters,
             availableSetsString: availableSetsString,
             modelConfig: deps.modelConfig,
-            apiKeys: deps.apiKeys,
+            apiKeys: getCurrentApiKeys(deps),
         };
 
         const initialFoundation = await apiService.postToNarrativeArchitectFoundation(payload);
@@ -3373,7 +3388,7 @@ async function executeRelationshipDynamicsGenesisStep(deps: GameFlowDeps, setter
             sideCharacters: freshSideCharacters as any,
             playerName: deps.playerName,
             modelSelection: deps.modelConfig,
-            apiKeys: deps.apiKeys,
+            apiKeys: getCurrentApiKeys(deps),
             storyName: STORY_NAME,
             playthroughSummaries: [],
         };
@@ -3455,9 +3470,9 @@ async function executeFoundationTraitsStep(deps: GameFlowDeps, setters: Setters,
         const apiResult = await geminiService.executeApiCallWithPolicy<CharacterDeveloperAnalysis>(
             'CharacterDeveloper',
             deps.modelConfig,
-            deps.apiKeys,
+            getCurrentApiKeys(deps),
             (cm, _ak) => characterDeveloperService.runCharacterDeveloper(
-                deps.apiKeys, deps.modelConfig, STORY_NAME, 1,
+                getCurrentApiKeys(deps), deps.modelConfig, STORY_NAME, 1,
                 "The story begins.", // novelContext
                 "No dialogue yet.", // transcript
                 initialFoundation.story_arcs,
@@ -3591,7 +3606,7 @@ async function executeDayOneItineraryStep(deps: GameFlowDeps, setters: Setters, 
             mainCharacters: freshMainCharacters,
             sideCharacters: freshSideCharacters,
             modelConfig: deps.modelConfig,
-            apiKeys: deps.apiKeys,
+            apiKeys: getCurrentApiKeys(deps),
         };
 
         const rawResponse = await apiService.postToNarrativeArchitectDayOne(payload);

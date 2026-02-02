@@ -1,6 +1,7 @@
 import { postToCastAnalyst } from '../../services/apiService';
 import { STORY_NAME } from '../../storyConfig';
 import { devLog } from '../../lib/devLog';
+import { getRobustApiKeys } from '../../lib/apiKeyUtils';
 import { AppState, NovelChapter, DayLog, ApiCallResult, GeminiModel, ModelSelection, CharacterConfig, CharacterTraits, CharacterLikesDislikes, ChronicleEntry, EvolvingStoryArc, Subplot, PsychologicalProfiles } from '../../types';
 import { getAvailableGenericSetInfo } from '../../lib/genericSprites';
 import { mapFullHistoryForAI, assembleVolumeAwareNovelContext } from '../../lib/promptUtils';
@@ -134,7 +135,7 @@ export async function getCastAnalysis(
 
     // Config keys
     modelConfig: state.modelSelection,
-    apiKeys: state.apiKeys,
+    apiKeys: getRobustApiKeys(state.apiKeys),
   };
 
   // Add EOD pipeline caching parameters if provided

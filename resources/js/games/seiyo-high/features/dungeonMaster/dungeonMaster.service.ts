@@ -36,6 +36,7 @@ import {
     SEGMENT_KEY_RELATIONSHIP_KEYS_MODIFIED_TODAY,
 } from '../../services/persistenceService';
 import { assembleHybridMemory, assembleVolumeAwareNovelContext, mapFullHistoryForAI } from '../../lib/promptUtils';
+import { getRobustApiKeys } from '../../lib/apiKeyUtils';
 
 /**
  * NEW ARCHITECTURE:
@@ -230,7 +231,7 @@ export async function generateSceneFromState(
       imageStyleMode: state.modelSelection.imageStyleMode,
       imagenModel: state.modelSelection.imagenModel,
     },
-    apiKeys: state.apiKeys,
+    apiKeys: getRobustApiKeys(state.apiKeys),
     
     // [GENERATIVE IMAGES] Context for image generation
     currentLocationId: (state as any).currentLocationId,
