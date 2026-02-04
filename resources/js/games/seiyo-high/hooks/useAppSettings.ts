@@ -85,11 +85,17 @@ export const useAppSettings = () => {
     
     // Fresh install: Gemini 3 Flash for both - the sweet spot for quality and cost
     // Pro is available for hardcore players who want the best regardless of cost
+    // HuggingFace demo: disable image generation by default (free tier friendly)
+    const isHfDemo = import.meta.env.VITE_IS_HF_BUILD === 'true';
     return {
       dungeonMasterModel: 'gemini-3-flash-preview',
       storyModel: 'gemini-3-flash-preview',
-      // Sprite generation enabled by default with recommended settings
-      enableSpriteGeneration: true,
+      // Image generation disabled by default for HF demo (requires Tier 1)
+      enableGenerativeImages: !isHfDemo,
+      imageStyleMode: 'hybrid',
+      imagenModel: 'imagen-4.0-generate-001',
+      // Sprite generation disabled by default for HF demo (requires Tier 1)
+      enableSpriteGeneration: !isHfDemo,
       spriteModel: 'gemini-2.5-flash-image',
       spriteStyleMode: 'hybrid',
     };

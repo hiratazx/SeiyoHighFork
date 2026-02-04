@@ -21,9 +21,15 @@ export const ModelSelectionModal: React.FC<ModelSelectionModalProps> = ({ isVisi
   const [storyModel, setStoryModel] = useState<AiModelId>(currentSelection.storyModel);
   const [providerTab, setProviderTab] = useState<ProviderId>('gemini');
   
+  // HuggingFace demo: default to OFF for generative features (free tier friendly)
+  const isHfDemo = import.meta.env.VITE_IS_HF_BUILD === 'true';
+  const defaultGenerativeEnabled = !isHfDemo; // true for main site, false for HF demo
+  
   // [GENERATIVE IMAGES] State for image generation settings
-  // Note: Generative images are always enabled - stock-only mode removed for better UX
-  const [enableGenerativeImages, setEnableGenerativeImages] = useState<boolean>(true);
+  // Note: Can be disabled for free-tier API keys that don't support image generation
+  const [enableGenerativeImages, setEnableGenerativeImages] = useState<boolean>(
+    currentSelection.enableGenerativeImages ?? defaultGenerativeEnabled
+  );
   const [imageStyleMode, setImageStyleMode] = useState<ImageStyleMode>(
     currentSelection.imageStyleMode ?? 'hybrid'
   );
@@ -33,7 +39,7 @@ export const ModelSelectionModal: React.FC<ModelSelectionModalProps> = ({ isVisi
   
   // [GENERATIVE SPRITES] State for sprite generation settings
   const [enableSpriteGeneration, setEnableSpriteGeneration] = useState<boolean>(
-    currentSelection.enableSpriteGeneration ?? true
+    currentSelection.enableSpriteGeneration ?? defaultGenerativeEnabled
   );
   const [spriteModel, setSpriteModel] = useState<SpriteModel>(
     currentSelection.spriteModel ?? 'gemini-2.5-flash-image'
@@ -46,16 +52,16 @@ export const ModelSelectionModal: React.FC<ModelSelectionModalProps> = ({ isVisi
     if (isVisible) {
       setDmModel(currentSelection.dungeonMasterModel);
       setStoryModel(currentSelection.storyModel);
-      // Generative images always enabled - ignore saved preference for stock-only mode
-      setEnableGenerativeImages(true);
+      // Respect saved preference, default OFF for HF demo (free tier friendly)
+      setEnableGenerativeImages(currentSelection.enableGenerativeImages ?? defaultGenerativeEnabled);
       setImageStyleMode(currentSelection.imageStyleMode ?? 'hybrid');
       setImagenModel(currentSelection.imagenModel ?? 'imagen-4.0-generate-001');
       // [GENERATIVE SPRITES]
-      setEnableSpriteGeneration(currentSelection.enableSpriteGeneration ?? true);
+      setEnableSpriteGeneration(currentSelection.enableSpriteGeneration ?? defaultGenerativeEnabled);
       setSpriteModel(currentSelection.spriteModel ?? 'gemini-2.5-flash-image');
       setSpriteStyleMode(currentSelection.spriteStyleMode ?? 'hybrid');
     }
-  }, [isVisible, currentSelection]);
+  }, [isVisible, currentSelection, defaultGenerativeEnabled]);
 
   if (!isVisible) {
     return null;
@@ -157,10 +163,27 @@ export const ModelSelectionModal: React.FC<ModelSelectionModalProps> = ({ isVisi
               <span>🎨</span> AI Background Generation
             </h3>
             <p className="text-sm text-gray-300 mt-1 mb-4">
-              Generate anime-style backgrounds for each location. Choose your preferred model and mode below.
+              Generate anime-style backgrounds for each location.
             </p>
             
-            {/* Model and mode selectors - always visible since generative images are always enabled */}
+            {/* Toggle */}
+            <label className="flex items-center gap-3 p-3 bg-white/5 rounded-md cursor-pointer hover:bg-white/10 transition-colors mb-4">
+              <input
+                type="checkbox"
+                checked={enableGenerativeImages}
+                onChange={(e) => setEnableGenerativeImages(e.target.checked)}
+                className="w-5 h-5 accent-amber-400"
+              />
+              <div>
+                <span className="font-semibold text-white">Enable AI Background Generation</span>
+                <p className="text-xs text-gray-400">
+                  Requires Tier 1 API. Free tier: disable this (uses stock backgrounds). Free tier has strict rate limits — only for a quick try.
+                </p>
+              </div>
+            </label>
+            
+            {/* Model and mode selectors - only show when enabled */}
+            {enableGenerativeImages && (
             <>
                 {/* Background Image Model Selection */}
                 <div className="flex flex-col gap-2 mb-4">
@@ -291,6 +314,7 @@ export const ModelSelectionModal: React.FC<ModelSelectionModalProps> = ({ isVisi
                   </label>
                 </div>
               </>
+            )}
           </div>
 
           {/* [GENERATIVE SPRITES] Character Sprite Generation Settings */}
@@ -313,7 +337,7 @@ export const ModelSelectionModal: React.FC<ModelSelectionModalProps> = ({ isVisi
               <div>
                 <span className="font-semibold text-white">Enable Generative Sprites</span>
                 <p className="text-xs text-gray-400">
-                  When enabled, AI can generate unique character portraits
+                  Requires Tier 1 API. Free tier: disable this (uses stock sprites). Free tier has strict rate limits — only for a quick try.
                 </p>
               </div>
             </label>

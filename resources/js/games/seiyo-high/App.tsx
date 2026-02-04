@@ -430,7 +430,17 @@ const App: React.FC<AppProps> = ({ isDeveloper, isSubscribed }) => {
         });
       }
       
-      // 4. Create a fake file input event to trigger import
+      // 4. [HF DEMO] Override modelSelection to disable generative images/sprites
+      // Free tier API keys don't support image generation - disable by default for demo
+      if (saveData.gameState?.modelSelection) {
+        saveData.gameState.modelSelection = {
+          ...saveData.gameState.modelSelection,
+          enableGenerativeImages: false,
+          enableSpriteGeneration: false,
+        };
+      }
+      
+      // 5. Create a fake file input event to trigger import
       // Note: API key was saved to localStorage in step 1, import will read it from there
       const blob = new Blob([JSON.stringify(saveData)], { type: 'application/json' });
       const file = new File([blob], 'demo-save.json', { type: 'application/json' });
@@ -441,10 +451,10 @@ const App: React.FC<AppProps> = ({ isDeveloper, isSubscribed }) => {
         target: { files: dataTransfer.files }
       } as unknown as React.ChangeEvent<HTMLInputElement>;
       
-      // 5. Import the save
+      // 6. Import the save
       handleImportState(fakeEvent);
       
-      // 6. Close the modal
+      // 7. Close the modal
       setShowDemoWelcomeModal(false);
     } catch (error: any) {
       console.error('[HF Demo] Failed to start demo:', error);
