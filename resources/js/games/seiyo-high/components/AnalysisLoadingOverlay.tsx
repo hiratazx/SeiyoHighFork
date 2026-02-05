@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { EndOfDayStep, PsychologicalProfiles, CharacterConfig } from '../types'; 
 
 import { TranslationSet, englishStrings } from '../lib/translations';
+import { ErrorDetailModal } from './ErrorDetailModal';
 
 interface AnalysisLoadingOverlayProps {
   isVisible: boolean;
@@ -80,6 +81,10 @@ export const AnalysisLoadingOverlay: React.FC<AnalysisLoadingOverlayProps> = ({
   }));
   const [retryingStep, setRetryingStep] = useState<EndOfDayStep | null>(null);
   const [isStartingNextDay, setIsStartingNextDay] = useState(false);
+  
+  // Error detail modal state
+  const [errorDetailStep, setErrorDetailStep] = useState<{ step: EndOfDayStep; label: string } | null>(null);
+  const errorDetailMessage = errorDetailStep ? errors[errorDetailStep.step] || '' : '';
 
   if (!isVisible) {
     return null;
@@ -153,10 +158,24 @@ export const AnalysisLoadingOverlay: React.FC<AnalysisLoadingOverlayProps> = ({
                  } else if (errorForThisUiStep) {
                      icon = '❌'; textClass = 'text-red-400';
                      const displayError = formatApiError(errorForThisUiStep);
-                     errorText = <span className="text-xs ml-2 text-white">({displayError})</span>;
+                     errorText = (
+                       <button 
+                         onClick={() => setErrorDetailStep({ step: attemptedStep, label })}
+                         className="text-xs ml-2 text-red-300 hover:text-white underline underline-offset-2 cursor-pointer"
+                         title="Click to view full error details"
+                       >
+                         ({displayError}) ⓘ
+                       </button>
+                     );
                      
                      retryButton = (
                         <div className="ml-auto flex gap-2">
+                            <button
+                                onClick={() => setErrorDetailStep({ step: attemptedStep, label })}
+                                className="text-xs bg-gray-600 hover:bg-gray-700 text-white px-2 py-0.5 rounded"
+                            >
+                                Details
+                            </button>
                             <button
                                 onClick={() => handleRetry(attemptedStep)}
                                 disabled={isRetryingThisStep}
@@ -201,6 +220,18 @@ export const AnalysisLoadingOverlay: React.FC<AnalysisLoadingOverlayProps> = ({
            <div className="space-y-4"> {characters.map(char => ( profilesToDisplay?.[char.name] && ( <div key={char.name}> <h4 className={`font-bold text-lg ${char.color}`}>{char.name}</h4> <p className="text-gray-300 mt-1">{profilesToDisplay[char.name]}</p> </div> ) ))} </div>
          </div>
        )}
+       
+      {/* Error Detail Modal */}
+      <ErrorDetailModal
+        isVisible={!!errorDetailStep}
+        errorMessage={errorDetailMessage}
+        stepName={errorDetailStep?.label || ''}
+        onClose={() => setErrorDetailStep(null)}
+        onRetry={() => errorDetailStep && handleRetry(errorDetailStep.step)}
+        onOpenModelSettings={onOpenModelSelectionModal}
+        onOpenApiKeySettings={onOpenApiKeyModal}
+        isRetrying={retryingStep === errorDetailStep?.step}
+      />
     </div>
   );
 };

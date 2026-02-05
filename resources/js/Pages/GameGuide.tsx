@@ -12,9 +12,76 @@ export default function GameGuide() {
                         <div className="p-6 text-white/90">
                             <h1 className="mb-8 text-3xl font-bold font-display">Game Guide</h1>
 
+                            {/* Quick Test */}
+                            <section className="mb-10">
+                                <h2 className="mb-4 text-2xl font-semibold text-primary">⚡ Quick Test (Free Tier API Key)</h2>
+                                
+                                <p className="text-white/70 mb-4">
+                                    Want to test the game before adding a payment method? You can try a few interactions with a <strong>basic free tier</strong> Gemini API key!
+                                </p>
+
+                                <div className="rounded-lg bg-gradient-to-r from-cyan-900/40 to-purple-900/40 border border-cyan-500/30 p-5 mb-4">
+                                    <h3 className="font-semibold text-cyan-300 mb-3">🎮 Quick Start (Free Tier)</h3>
+                                    <ol className="list-decimal list-inside text-white/70 space-y-2 mb-4">
+                                        <li>Go to{' '}
+                                            <a 
+                                                href="https://aistudio.google.com/app/apikey" 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="text-cyan-400 hover:underline"
+                                            >
+                                                Google AI Studio
+                                            </a>
+                                            {' '}and create an API key (no payment method needed)
+                                        </li>
+                                        <li>Visit the{' '}
+                                            <a 
+                                                href="https://huggingface.co/spaces/ainimegamesplatform/SeiyoHigh" 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="text-purple-400 hover:underline font-semibold"
+                                            >
+                                                HuggingFace Demo
+                                            </a>
+                                            {' '}(optimized for free tier)
+                                        </li>
+                                        <li>Enter your name and API key — start playing!</li>
+                                    </ol>
+                                    <p className="text-white/50 text-sm">
+                                        The demo has image generation disabled by default because free tier API keys don't support it. You'll play with pre-made stock images instead — the story experience is identical!
+                                    </p>
+                                </div>
+
+                                <div className="rounded-lg bg-white/5 border border-white/10 p-4 mb-4">
+                                    <h3 className="font-semibold text-white mb-2">Free Tier Limits</h3>
+                                    <ul className="list-disc list-inside text-white/50 space-y-1">
+                                        <li>~20 interactions on <strong>Gemini 2.5 Flash</strong></li>
+                                        <li>~20 interactions on <strong>Gemini 3 Flash</strong></li>
+                                        <li>No image generation (backgrounds & sprites use stock images)</li>                                        
+                                    </ul>
+                                    <p className="text-white/70 mt-3">
+                                        This is enough to get a feel for the AI storytelling and see if it's for you. But you'll hit rate limits quickly — <strong>free tier is for testing only</strong>, not extended play.
+                                    </p>
+                                </div>
+
+                                <div className="rounded-lg bg-yellow-900/30 border border-yellow-600/30 p-4 mb-4">
+                                    <p className="text-yellow-200 text-sm">
+                                        <strong>💎 Have a Tier 1 account?</strong> You can enable AI image generation in the demo via <strong>Model Settings</strong> (gear icon), or play here on{' '}
+                                        <a href="/" className="text-cyan-400 hover:underline">ainime-games.com</a>
+                                        {' '}where everything is enabled by default!
+                                    </p>
+                                </div>
+
+                                <div className="rounded-lg bg-white/5 border border-white/10 p-4">
+                                    <p className="text-white/50 text-sm">
+                                        <strong>💡 Note:</strong> You can also play on the main site with a free tier key, but you'll need to go through new game generation first (which uses a few API calls), then manually disable image generation in Model Settings. Either way, <strong>you will hit rate limits quickly</strong> — free tier is really just for a quick taste!
+                                    </p>
+                                </div>
+                            </section>
+
                             {/* Getting Started */}
                             <section className="mb-10">
-                                <h2 className="mb-4 text-2xl font-semibold text-primary">🚀 Getting Started</h2>
+                                <h2 className="mb-4 text-2xl font-semibold text-primary">🚀 Getting Started (Full Experience)</h2>
                                 
                                 <div className="space-y-4">
                                     <div className="rounded-lg bg-white/5 border border-white/10 p-4">
@@ -29,7 +96,7 @@ export default function GameGuide() {
                                             >
                                                 Google AI Studio
                                             </a>
-                                            {' '}to create your Gemini API key. <strong>You'll need to add a payment method</strong> to get Tier 1 access—the free tier has rate limits too low to actually play the game.
+                                            {' '}to create your Gemini API key. <strong>You'll need to add a payment method</strong> to get Tier 1 access—the free tier has rate limits too low to actually play the game fully.
                                         </p>
                                         <div className="bg-green-900/30 border border-green-500/30 rounded-lg p-3 mb-3">
                                             <p className="text-green-200 text-sm">

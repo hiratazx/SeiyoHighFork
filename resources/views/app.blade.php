@@ -5,6 +5,29 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        
+        <!-- SEO Meta Tags -->
+        <meta name="description" content="Experience AI-powered visual novels where every story is unique. Dynamic characters, evolving relationships, and unscripted narratives powered by Gemini AI. No subscription needed.">
+        <meta name="keywords" content="AI visual novel, AI game, interactive fiction, Gemini AI, visual novel, anime game, procedural storytelling, AI storytelling, BYOK">
+        <meta name="author" content="ainime-games">
+        
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="{{ url()->current() }}">
+        <meta property="og:title" content="{{ config('app.name', 'Seiyo High') }} - AI Visual Novel">
+        <meta property="og:description" content="Experience AI-powered visual novels where every story is unique. Dynamic characters, evolving relationships, and unscripted narratives.">
+        <meta property="og:image" content="{{ url('/images/hero.jpg') }}">
+        <meta property="og:site_name" content="ainime-games">
+        
+        <!-- Twitter -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:url" content="{{ url()->current() }}">
+        <meta name="twitter:title" content="{{ config('app.name', 'Seiyo High') }} - AI Visual Novel">
+        <meta name="twitter:description" content="Experience AI-powered visual novels where every story is unique. Dynamic characters, evolving relationships, and unscripted narratives.">
+        <meta name="twitter:image" content="{{ url('/images/hero.jpg') }}">
+        
+        <!-- Canonical URL -->
+        <link rel="canonical" href="{{ url()->current() }}">
 
         <!-- Favicon -->
         <link rel="icon" type="image/x-icon" href="/images/favicon.ico">

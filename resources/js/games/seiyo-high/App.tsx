@@ -637,9 +637,15 @@ const App: React.FC<AppProps> = ({ isDeveloper, isSubscribed }) => {
         </div>
       )}
       {error && !isUnrecoverableError && !isBlockedByOtherTab && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-800 text-white p-4 rounded-lg z-50 shadow-lg">
-          <p><strong>Error:</strong> {error}</p>
-          <button onClick={handlers.setError.bind(null, null)} className="absolute top-1 right-2 text-white font-bold">&times;</button>
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-gradient-to-br from-gray-900/95 via-blue-950/90 to-indigo-950/95 border border-cyan-400/30 text-white p-4 rounded-lg z-50 shadow-lg shadow-cyan-400/10 max-w-md backdrop-blur-sm">
+          <div className="flex items-start gap-2 pr-6">
+            <span className="text-xl">💡</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm mb-1 text-cyan-200">Temporary Issue</p>
+              <p className="text-xs text-gray-300 break-words line-clamp-3">{error}</p>
+            </div>
+          </div>
+          <button onClick={handlers.setError.bind(null, null)} className="absolute top-2 right-2 text-gray-400 hover:text-white text-xl leading-none">&times;</button>
         </div>
       )}
 
@@ -787,6 +793,8 @@ const App: React.FC<AppProps> = ({ isDeveloper, isSubscribed }) => {
             onRetry={handleRetry}
             onCancel={handleCancelError}
             t={uiTranslations}
+            onOpenModelSettings={() => setIsModelSelectionVisible(true)}
+            onOpenApiKeySettings={() => setIsApiKeyModalVisible(true)}
           />
           <ApiKeyModal 
             isVisible={isApiKeyModalVisible} 
