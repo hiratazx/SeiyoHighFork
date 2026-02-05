@@ -177,7 +177,7 @@ export const ModelSelectionModal: React.FC<ModelSelectionModalProps> = ({ isVisi
               <div>
                 <span className="font-semibold text-white">Enable AI Background Generation</span>
                 <p className="text-xs text-gray-400">
-                  Requires Tier 1 API. Free tier: disable this (uses stock backgrounds). Free tier has strict rate limits — only for a quick try.
+                  Requires Tier 1 API keys. Free tier API keys: disable this (no image generation possible for free tier API keys).
                 </p>
               </div>
             </label>
@@ -337,7 +337,7 @@ export const ModelSelectionModal: React.FC<ModelSelectionModalProps> = ({ isVisi
               <div>
                 <span className="font-semibold text-white">Enable Generative Sprites</span>
                 <p className="text-xs text-gray-400">
-                  Requires Tier 1 API. Free tier: disable this (uses stock sprites). Free tier has strict rate limits — only for a quick try.
+                  Requires Tier 1 API keys. Free tier API keys: disable this (no sprite generation possible for free tier API keys).
                 </p>
               </div>
             </label>

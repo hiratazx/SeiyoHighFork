@@ -89,8 +89,10 @@ export const DemoWelcomeModal: React.FC<DemoWelcomeModalProps> = ({
               Enter your Gemini API key:
             </label>
             <p className="text-yellow-400/80 text-xs mb-2">
-              Tier 1 access recommended. Free tier: disable "AI Background Generation" and 
-              "Generative Sprites" in Model Settings (gear icon). Note: free tier has strict rate limits — fine for a quick try, but not viable for extended play.
+              Tier 1 access recommended. In this demo "AI Background Generation" and 
+              "Generative Sprites" in Model Settings are disabled by default so you can test with free tier API keys! 
+              <br />
+              Note: free tier has strict rate limits - fine for trying out the game, but not viable for extended play.
             </p>
             <input
               id="demo-api-key"
