@@ -243,11 +243,10 @@ The AI responds as all the characters and narrates the world around you.
 
 ## 💰 Token Usage & Cost
 
-Each interaction sends between **150,000 and 300,000 input tokens** to the model — that's the full weight of the multi-agent context (memory tiers, relationship graphs, character data, story arcs, the scene mental model, and the DM's rules). Sounds expensive, but it isn't:
+Each interaction sends between **150,000 and 300,000 input tokens** to the model — that's the full weight of the multi-agent context (memory tiers, relationship graphs, character data, story arcs, the scene mental model, and the DM's rules). This is a token-heavy architecture by design, but aggressive caching keeps it viable:
 
 - **80–98% of input tokens are cached** via Google's Gemini context caching, which reduces the cost of cached tokens by **90%**. Most of the context is stable between interactions, so the cache hit rate is extremely high.
 - **Output tokens** are typically **2,500–5,000** per interaction, depending on scene complexity.
-- The result: rich, deeply contextual narrative output at a fraction of the naive cost.
 
 > **Playing on a free tier key?** It's possible — just keep image generation disabled (off by default in this demo). For the best experience, grab a **Tier 1 free trial** account with **$300 in free credits** — that's enough for hundreds of hours of play on the very capable **Gemini 3.0 Flash** model.
 
