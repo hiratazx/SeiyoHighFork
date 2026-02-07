@@ -354,19 +354,8 @@ const App: React.FC<AppProps> = ({ isDeveloper, isSubscribed }) => {
     }
   }, [isUiLocked, prevIsUiLocked, playerChoices]);
 
-  // Listen for api-key-missing events and show the API key modal
-  useEffect(() => {
-    const handleApiKeyMissing = (event: CustomEvent) => {
-      console.warn('[App] API key missing detected:', event.detail);
-      // Show the API key modal so user can re-enter their key
-      setIsApiKeyModalVisible(true);
-    };
-
-    window.addEventListener('api-key-missing', handleApiKeyMissing as EventListener);
-    return () => {
-      window.removeEventListener('api-key-missing', handleApiKeyMissing as EventListener);
-    };
-  }, [setIsApiKeyModalVisible]);
+  // API key missing errors are now handled by the normal ErrorOverlay.
+  // The player can navigate to the API key modal via the Menu themselves.
 
   // [HF DEMO] Show welcome modal on first load if no save exists
   useEffect(() => {

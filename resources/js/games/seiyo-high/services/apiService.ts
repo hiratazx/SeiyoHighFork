@@ -76,20 +76,16 @@ axios.interceptors.response.use(
         }
         
         // Handle missing API key errors (422 with apiKeys validation errors)
+        // We let this propagate as a normal error — the ErrorOverlay will show.
+        // The player can then navigate to the API key modal themselves via the Menu.
+        // (Previously this also auto-opened the API key modal, causing two modals to appear.)
         if (error.response?.status === 422 && error.response?.data?.errors) {
             const errors = error.response.data.errors;
             const apiKeyErrors = Object.keys(errors).filter(key => key.startsWith('apiKeys.'));
             
             if (apiKeyErrors.length > 0) {
                 devWarn('[apiService] Missing API key detected', apiKeyErrors);
-                
-                // Dispatch event to show API key modal
-                window.dispatchEvent(new CustomEvent('api-key-missing', {
-                    detail: { 
-                        message: 'Your API key is missing or was cleared. Please re-enter it to continue playing.',
-                        missingKeys: apiKeyErrors.map(k => k.replace('apiKeys.', ''))
-                    }
-                }));
+                return Promise.reject(new Error('Your API key is missing or was cleared. Please re-enter it via Menu → Manage API Key.'));
             }
         }
         
