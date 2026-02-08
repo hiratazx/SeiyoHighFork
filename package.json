@@ -1,20 +1,27 @@
 {
     "$schema": "https://json.schemastore.org/package.json",
+    "name": "ai-visual-novel",
+    "version": "1.0.0",
+    "description": "AI Visual Novel powered by Ollama",
+    "main": "dist-electron/main.js",
     "private": true,
     "type": "module",
     "scripts": {
+        "dev": "vite",
+        "dev:electron": "concurrently \"vite\" \"tsc -p tsconfig.electron.json --watch\" \"electron .\"",
         "build": "tsc && vite build",
-        "build:hf": "tsc && vite build --config vite.config.hf.js",
-        "dev": "vite"
+        "build:electron": "tsc && tsc -p tsconfig.electron.json && vite build",
+        "build:win": "npm run build:electron && electron-builder --win",
+        "build:linux": "npm run build:electron && electron-builder --linux",
+        "build:all": "npm run build:electron && electron-builder --win --linux",
+        "electron": "electron ."
     },
     "dependencies": {
-        "@google/genai": "^1.5.1",
         "dexie": "^4.0.7",
         "uuid": "^9.0.1"
     },
     "devDependencies": {
         "@headlessui/react": "^2.0.0",
-        "@inertiajs/react": "^2.0.0",
         "@tailwindcss/forms": "^0.5.3",
         "@tailwindcss/vite": "^4.0.0",
         "@types/node": "^22.19.7",
@@ -25,12 +32,43 @@
         "autoprefixer": "^10.4.12",
         "axios": "^1.11.0",
         "concurrently": "^9.0.1",
-        "laravel-vite-plugin": "^2.0.0",
+        "electron": "^33.0.0",
+        "electron-builder": "^25.0.0",
         "postcss": "^8.4.31",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "tailwindcss": "^3.2.1",
         "typescript": "^5.0.2",
         "vite": "^7.0.7"
+    },
+    "build": {
+        "appId": "com.visualnovel.ai",
+        "productName": "AI Visual Novel",
+        "directories": {
+            "output": "release"
+        },
+        "files": [
+            "dist/**/*",
+            "dist-electron/**/*"
+        ],
+        "win": {
+            "target": [
+                "nsis",
+                "portable"
+            ],
+            "icon": "public/favicon.ico"
+        },
+        "linux": {
+            "target": [
+                "AppImage",
+                "deb"
+            ],
+            "icon": "public/favicon.ico",
+            "category": "Game"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true
+        }
     }
 }
