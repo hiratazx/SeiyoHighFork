@@ -69,7 +69,7 @@ function createSimpleScene(text: string): VnScene {
     // Split the response into parts for different speakers
     const lines = text.split('\n').filter(line => line.trim());
 
-    const scene: DialogueEntry[] = [];
+    const sceneEntries: VnScene['scene'] = [];
     let currentSpeaker = 'Narrator';
 
     for (const line of lines) {
@@ -80,23 +80,40 @@ function createSimpleScene(text: string): VnScene {
         if (speakerMatch) {
             currentSpeaker = speakerMatch[1];
             const dialogue = speakerMatch[2];
-            scene.push(createDialogueEntry(currentSpeaker, dialogue));
+            sceneEntries.push({
+                speaker: currentSpeaker,
+                dialogue,
+                expression: 'neutral',
+                sprite_set: 'default',
+                motivation: '',
+            });
         } else if (line.trim()) {
-            scene.push(createDialogueEntry(currentSpeaker, line));
+            sceneEntries.push({
+                speaker: currentSpeaker,
+                dialogue: line,
+                expression: 'neutral',
+                sprite_set: 'default',
+                motivation: '',
+            });
         }
     }
 
     // Ensure at least one dialogue entry
-    if (scene.length === 0) {
-        scene.push(createDialogueEntry('Narrator', text || 'The scene continues...'));
+    if (sceneEntries.length === 0) {
+        sceneEntries.push({
+            speaker: 'Narrator',
+            dialogue: text || 'The scene continues...',
+            expression: 'neutral',
+            sprite_set: 'default',
+            motivation: '',
+        });
     }
 
     return {
-        scene,
-        present_characters: extractCharacterNames(scene),
+        scene: sceneEntries,
+        present_characters: extractCharacterNames(sceneEntries),
         location_hint: 'classroom',
-        player_choices: null,
-    } as VnScene;
+    };
 }
 
 function createDialogueEntry(speaker: string, dialogue: string): DialogueEntry {
@@ -114,7 +131,7 @@ function createDialogueEntry(speaker: string, dialogue: string): DialogueEntry {
     };
 }
 
-function extractCharacterNames(scene: DialogueEntry[]): string[] {
+function extractCharacterNames(scene: VnScene['scene']): string[] {
     const names = new Set<string>();
     for (const entry of scene) {
         if (entry.speaker && entry.speaker !== 'Narrator' && entry.speaker !== 'Player') {

@@ -5,7 +5,7 @@ import {
     formatModelSize,
     parseModelName,
     OllamaModel
-} from '../../services/ollamaService';
+} from '../../../services/ollamaService';
 
 interface OllamaSettingsProps {
     isOpen: boolean;
@@ -139,8 +139,8 @@ export function OllamaSettings({ isOpen, onClose, selectedModel, onModelSelect }
                                             key={model.name}
                                             onClick={() => onModelSelect(model.name)}
                                             className={`w-full p-4 rounded-xl text-left transition-all ${isSelected
-                                                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg shadow-purple-500/20'
-                                                    : 'bg-white/5 hover:bg-white/10 border border-white/10'
+                                                ? 'bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg shadow-purple-500/20'
+                                                : 'bg-white/5 hover:bg-white/10 border border-white/10'
                                                 }`}
                                         >
                                             <div className="flex items-center justify-between">
